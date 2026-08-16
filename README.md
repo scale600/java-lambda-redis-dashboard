@@ -9,7 +9,8 @@ information on every API call and visualize real-time traffic.
 - Hourly / daily visitor trends (line chart)
 - Views by access path / URL (bar chart or table)
 - Recent visit log (list)
-- Fully serverless, deployable on the AWS free tier
+- Fully serverless
+- Served at https://java-redis.techcloudup.com (Cloudflare DNS)
 
 ## Tech Stack
 
@@ -20,7 +21,8 @@ information on every API call and visualize real-time traffic.
 | Data Store | Upstash Redis (serverless) |
 | Frontend | React or Vue.js |
 | Visualization | Chart.js |
-| Hosting | Amazon S3 (static files) |
+| Hosting | CloudFront + S3 (custom domain via Cloudflare) |
+| IaC | Terraform |
 
 ## Architecture
 
@@ -29,7 +31,8 @@ Visitor ──▶ API Gateway ──▶ Lambda (record) ──▶ Upstash Redis
                                               ▲
 CloudWatch Events ──▶ Lambda (aggregate) ─────┘
 
-Browser ──▶ S3 (dashboard) ──▶ API Gateway ──▶ Lambda (stats) ──▶ Upstash Redis
+Browser ──▶ Cloudflare (DNS) ──▶ CloudFront ──▶ S3 (dashboard)
+Browser ──▶ API Gateway ──▶ Lambda (stats) ──▶ Upstash Redis
 ```
 
 See [docs/architecture.md](docs/architecture.md) for the full system design and
@@ -40,12 +43,18 @@ data flow.
 ```
 .
 ├── README.md
+├── CHECKLIST.md                   # Implementation progression checklist
 ├── note.md                        # Project idea / plan
 ├── docs/
 │   ├── architecture.md            # System design & data flow
 │   ├── api.md                     # REST API specification
 │   ├── redis-data-model.md        # Redis keys & data structures
-│   └── deployment.md              # AWS + Upstash deployment guide
+│   └── deployment.md              # Deployment guide (Terraform)
+├── infra/                         # Terraform (IaC) — Lambda, API GW, S3, EventBridge
+│   ├── providers.tf
+│   ├── lambda.tf
+│   ├── api_gateway.tf
+│   └── ...
 ├── backend/                       # Java Lambda (Maven)
 │   ├── pom.xml
 │   └── src/main/java/...
@@ -83,21 +92,6 @@ data flow.
 2. Build and deploy the backend (see [deployment.md](docs/deployment.md)).
 3. Build and deploy the frontend to S3.
 4. Embed the tracking snippet on the pages you want to monitor.
-
-## Free Tier
-
-The project is designed to run entirely within free tiers:
-
-| Service | Free Allowance | Expiry |
-| --- | --- | --- |
-| AWS Lambda | 1M requests + 400K GB-seconds/month | Never |
-| Upstash Redis | 500K commands/month, 256MB | Never |
-| API Gateway | 1M API calls/month | 12 months |
-| S3 | 5GB storage, 20K GET/month | 12 months |
-
-> Lambda and Upstash free tiers never expire. API Gateway and S3 free tiers last
-> 12 months, after which usage is billed at standard rates (small at this scale).
-> See [deployment.md](docs/deployment.md) for cost-optimization guidance.
 
 ## Difficulty
 

@@ -3,10 +3,6 @@
 Upstash Redis is a serverless Redis accessed over REST (and TCP). All data is
 stored in a single logical database.
 
-Billing is **per command**: every `redis.call()` counts, including those inside
-a Lua script, pipeline, or `MULTI`/`EXEC` block. The free tier allows 500K
-commands per month, so minimizing commands per visit is the top priority.
-
 ## Key Naming Convention
 
 ```
@@ -68,21 +64,6 @@ INCRBY stats:total <today-total>
 SET stats:day:20260816 <today-total>
 LTRIM visits:recent 0 99
 ```
-
-## Command Budget
-
-| Item | Commands | Frequency |
-| --- | --- | --- |
-| Record a visit | 4 | per visit |
-| Dashboard refresh | ~4–6 | per poll |
-| Aggregation | ~3 | once per day |
-
-At 4 commands/visit, 500K commands/month supports ~125K visits/month before
-accounting for dashboard reads.
-
-> Note: bundling commands in a Lua script or pipeline does **not** reduce
-> billing on Upstash — each command inside is still billed individually.
-> Pipelining only reduces HTTP round-trips (latency / Lambda GB-seconds).
 
 ## Retention & Expiry
 

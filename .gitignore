@@ -1,3 +1,10 @@
 .env
 .DS_Store
 .codegraph
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+*.tfplan

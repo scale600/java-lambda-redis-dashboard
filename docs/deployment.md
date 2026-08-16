@@ -1,11 +1,17 @@
 # Deployment Guide
 
+Infrastructure is managed with **Terraform** (`infra/`). The backend (Java
+Lambda), API Gateway, EventBridge schedule, and frontend S3 bucket are all
+provisioned with `terraform apply`.
+
 ## Prerequisites
 
 - AWS account
 - Upstash account
+- Cloudflare account (manages `techcloudup.com` DNS)
 - Java 17+ and Maven
 - Node.js 18+ and npm
+- Terraform 1.5+
 - AWS CLI configured with credentials
 
 ## 1. Upstash Redis
@@ -13,62 +19,62 @@
 1. Create a database in the [Upstash Console](https://console.upstash.com).
 2. Choose a region close to your Lambda region.
 3. Note the **REST URL** and **REST token**.
-4. Add them to `.env` (and later to Lambda environment variables):
-
-```bash
-UPSTASH_REDIS_REST_URL=https://<db>.upstash.io
-UPSTASH_REDIS_REST_TOKEN=<token>
-```
 
 ## 2. Backend (Java + Lambda)
 
-### Build
+### Build the JAR
 
 ```bash
 cd backend
 mvn clean package
 ```
 
-The build produces an uber-JAR (`target/backend-1.0.jar`) suitable for Lambda.
+This produces `target/backend-1.0.jar`, which Terraform references.
 
-### Create Lambda functions
+### Configure Terraform
 
-For each handler, create a function in the AWS Console (or via SAM/CloudFormation):
+```bash
+cd infra
+cp terraform.tfvars.example terraform.tfvars
+# edit terraform.tfvars: set upstash_redis_rest_url / upstash_redis_rest_token
+```
 
-| Function | Handler | Environment |
-| --- | --- | --- |
-| `RecordVisitFunction` | `com.example.dashboard.RecordVisitHandler` | `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` |
-| `GetStatsFunction` | `com.example.dashboard.GetStatsHandler` | `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` |
-| `AggregateStatsFunction` | `com.example.dashboard.AggregateStatsHandler` | `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` |
+### Deploy
 
-- Runtime: **Java 17**.
-- Architecture: **arm64** (Graviton2) — ~20% cheaper GB-seconds and faster
-  cold starts than x86.
-- Enable **SnapStart** (free, Java-only) to cut cold starts from ~2–5s to <100ms.
-- Set the environment variables on each function.
-- Attach a minimal IAM role (no extra AWS services needed beyond Lambda logging).
+```bash
+cd infra
+terraform init
+terraform plan
+```
 
-### API Gateway
+The ACM certificate is DNS-validated, and `techcloudup.com` DNS lives on
+Cloudflare (outside Terraform), so the first deploy is done in two steps:
 
-1. Create a REST API.
-2. Define routes:
+```bash
+# 1) Create the certificate only (skips validation + CloudFront)
+terraform apply -target=aws_acm_certificate.frontend
 
-| Method | Path | Lambda |
-| --- | --- | --- |
-| `POST` | `/visit` | `RecordVisitFunction` |
-| `GET` | `/health` | `GetStatsFunction` |
-| `GET` | `/stats/overview` | `GetStatsFunction` |
-| `GET` | `/stats/timeseries` | `GetStatsFunction` |
-| `GET` | `/stats/paths` | `GetStatsFunction` |
-| `GET` | `/stats/recent` | `GetStatsFunction` |
+# 2) Add the validation record(s) to Cloudflare (grey cloud)
+terraform output acm_validation_records
 
-3. Enable CORS for the dashboard origin.
-4. Deploy to a stage (e.g. `prod`).
+# 3) Full apply — validates the cert, then creates everything else
+terraform apply
+```
 
-### Aggregation schedule
+Terraform provisions:
 
-Create an EventBridge (CloudWatch Events) rule that triggers
-`AggregateStatsFunction` once a day.
+- 3 Lambda functions (Java 17, **arm64**, **SnapStart**) with `live` aliases
+- API Gateway REST API: `POST /visit`, `GET /health`, `/stats/{proxy+}`
+- EventBridge daily schedule → `AggregateStatsFunction`
+- S3 bucket (private) + CloudFront distribution + ACM certificate for
+  `java-redis.techcloudup.com`
+
+Key outputs:
+
+```bash
+terraform output api_base_url           # API Gateway base URL
+terraform output cloudfront_domain      # CNAME target for Cloudflare
+```
 
 ## 3. Frontend (React / Vue)
 
@@ -77,18 +83,38 @@ Create an EventBridge (CloudWatch Events) rule that triggers
 ```bash
 cd frontend
 npm install
-# set the API base URL in a .env file
 npm run build
 ```
 
-Configure the API Gateway base URL in the frontend build (e.g.
-`VITE_API_BASE_URL=https://<api-id>.execute-api.<region>.amazonaws.com/prod`).
+Configure the API base URL (from `terraform output api_base_url`) in the
+frontend build, e.g.
+`VITE_API_BASE_URL=https://<api-id>.execute-api.<region>.amazonaws.com/prod`.
 
 ### Deploy to S3
 
-1. Create an S3 bucket with static website hosting enabled.
-2. Upload the contents of `frontend/dist/` (or `build/`).
-3. Optionally add a CloudFront distribution in front of the bucket.
+```bash
+cd infra
+terraform output frontend_bucket_name
+cd ../frontend
+aws s3 sync dist/ s3://<bucket>/
+```
+
+The bucket is private and served through CloudFront. After a redeploy,
+CloudFront may serve cached files for up to 5 minutes (default TTL); run a
+CloudFront invalidation to see changes immediately.
+
+### Custom Domain (Cloudflare)
+
+The dashboard is served at `java-redis.techcloudup.com`; DNS for
+`techcloudup.com` is on Cloudflare.
+
+After the full `terraform apply` completes, add a CNAME record in Cloudflare:
+
+- `java-redis` → the value of `terraform output cloudfront_domain`, with proxy
+  enabled (orange cloud).
+
+(Validation records are handled during the first deploy — see the "Deploy"
+section above.)
 
 ## 4. Embed the Tracking Snippet
 
@@ -118,19 +144,4 @@ Add a small script to each page to monitor:
 3. Inspect CloudWatch Logs for the Lambda functions for errors.
 4. Confirm the daily aggregation job runs and weekly keys appear.
 
-## Cost Optimization
 
-- **arm64 (Graviton2)** — ~20% cheaper GB-seconds and faster cold starts.
-- **SnapStart** (Java-only, free) — cuts cold starts from ~2–5s to <100ms.
-- **4 commands per visit** — see [redis-data-model.md](redis-data-model.md).
-- **Polling interval ≥ 60s** on the dashboard to stay within the Upstash
-  command quota.
-
-## Free Tier Reference
-
-| Service | Free Allowance | Note |
-| --- | --- | --- |
-| AWS Lambda | 1M requests + 400K GB-seconds per month | Always free |
-| API Gateway | 1M API calls per month | First 12 months |
-| Upstash Redis | 500K commands per month, 256MB storage | Free tier |
-| S3 | 5GB storage, 20K GET requests per month | First 12 months |

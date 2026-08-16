@@ -39,9 +39,9 @@ API and rendered in a static web dashboard served from S3.
 
 ### Aggregation
 
-- `AggregateStatsFunction` runs on a schedule via CloudWatch Events (EventBridge).
-- It rolls raw hourly counters into daily buckets and daily buckets into weekly
-  totals, and prunes expired keys.
+- `AggregateStatsFunction` runs daily at 00:00 UTC via EventBridge.
+- It rolls the previous (completed) day's hourly counters into daily buckets and
+  daily buckets into weekly totals, and prunes expired keys.
 
 ## Sequence
 
@@ -68,13 +68,4 @@ sequenceDiagram
 - One Upstash Redis database in a region close to the Lambda.
 - One S3 bucket for static hosting (optionally fronted by CloudFront).
 
-## Free Tier Considerations
 
-See [deployment.md](deployment.md) for the exact limits. The architecture keeps
-request volume within the free tier by:
-
-- Using `sendBeacon` (fire-and-forget) for tracking.
-- Writing only 4 Redis commands per visit (see [redis-data-model.md](redis-data-model.md)).
-- Polling the dashboard at ≥ 60-second intervals to stay within the Upstash
-  command quota.
-- Aggregating raw data on a schedule instead of computing at read time.

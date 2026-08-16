@@ -10,6 +10,13 @@ All responses are `application/json`. Timestamps are ISO 8601 UTC.
 - Stats endpoints may optionally be protected by an API Gateway API key / usage
   plan.
 
+## CORS
+
+The dashboard is served from `https://java-redis.techcloudup.com`. Because the
+API Gateway integration is `AWS_PROXY`, each Lambda handler must return the
+`Access-Control-Allow-Origin: https://java-redis.techcloudup.com` header and
+handle `OPTIONS` preflight requests.
+
 ## Error Format
 
 All non-2xx responses follow this shape:
@@ -147,17 +154,4 @@ Most recent visits.
 }
 ```
 
-## Rate & Polling Guidance
 
-Upstash Redis bills per command (free tier: 500K/month). Keep the dashboard
-polling interval at **60 seconds or longer** to stay within the quota.
-
-| Endpoint | Approx. Redis commands per call |
-| --- | --- |
-| `GET /stats/overview` | 3 |
-| `GET /stats/timeseries` | 1 per day bucket |
-| `GET /stats/paths` | 1 |
-| `GET /stats/recent` | 1 |
-
-A single open dashboard polling every 60s consumes roughly 200K commands/month.
-Polling every 10s would exceed the free tier on its own (~1.4M commands/month).

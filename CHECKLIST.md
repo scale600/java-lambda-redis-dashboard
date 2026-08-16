@@ -12,28 +12,29 @@ Progression order for building the Real-Time Traffic Monitoring Dashboard.
 - [ ] `.env` populated: `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`
 - [ ] Java 17+ and Maven installed
 - [ ] Node.js 18+ and npm installed
+- [ ] Terraform 1.5+ installed
 - [ ] AWS CLI configured
 
 ## Phase 1 — Backend (Java + Lambda)
 
-- [ ] `backend/pom.xml` (Maven) with `aws-lambda-java-core` + JSON library + HTTP client
+- [ ] `backend/pom.xml` (Maven) with `aws-lambda-java-core`, `aws-lambda-java-events`, JSON library, HTTP client
+- [ ] Handlers in package `com.example.dashboard` (matches Terraform `handler` values)
 - [ ] Redis client wrapper for the Upstash REST API
-- [ ] `RecordVisitHandler` — `POST /visit`, 4-command write path (see [redis-data-model.md](docs/redis-data-model.md))
-- [ ] `GetStatsHandler` — `GET /health`, `/stats/overview`, `/stats/timeseries`, `/stats/paths`, `/stats/recent`
-- [ ] `AggregateStatsHandler` — daily rollup (`stats:total`, `stats:day:*`, `LTRIM visits:recent`)
+- [ ] `RecordVisitHandler` — `POST /visit`, 4-command write path; parse the body as JSON regardless of Content-Type (`sendBeacon` sends `text/plain`)
+- [ ] `GetStatsHandler` — `GET /health` + `/stats/{proxy+}` (route `overview`/`timeseries`/`paths`/`recent` via the `proxy` path param); return `Access-Control-Allow-Origin`
+- [ ] `AggregateStatsHandler` — daily rollup of the previous day (`stats:total`, `stats:day:*`, `LTRIM visits:recent`)
 - [ ] Unit tests for all handlers
 - [ ] `mvn clean package` produces the uber-JAR
 
-## Phase 2 — Backend Deployment (AWS)
+## Phase 2 — Backend Deployment (Terraform)
 
-- [ ] Create `RecordVisitFunction` (Java 17, arm64, SnapStart)
-- [ ] Create `GetStatsFunction` (Java 17, arm64, SnapStart)
-- [ ] Create `AggregateStatsFunction` (Java 17, arm64, SnapStart)
-- [ ] Set `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` on each function
-- [ ] Create API Gateway REST API with 6 routes (see [api.md](docs/api.md))
-- [ ] Enable CORS for the dashboard origin
-- [ ] Deploy to a stage (`prod`)
-- [ ] EventBridge (CloudWatch Events) rule → daily `AggregateStatsFunction`
+- [ ] `cp infra/terraform.tfvars.example infra/terraform.tfvars` and set Upstash URL + token
+- [ ] `terraform init`
+- [ ] `terraform plan` (review changes)
+- [ ] `terraform apply -target=aws_acm_certificate.frontend` (create cert only)
+- [ ] `terraform output acm_validation_records` → add CNAME record(s) to Cloudflare (grey cloud)
+- [ ] `terraform apply` — validates cert + provisions 3 Lambdas (arm64 + SnapStart), API Gateway, EventBridge, S3 bucket, CloudFront
+- [ ] Note `terraform output api_base_url` for the frontend
 
 ## Phase 3 — Frontend (React / Vue)
 
@@ -47,28 +48,21 @@ Progression order for building the Real-Time Traffic Monitoring Dashboard.
 - [ ] Polling loop at ≥ 60s intervals
 - [ ] `npm run build`
 
-## Phase 4 — Frontend Deployment (S3)
+## Phase 4 — Frontend Deployment (CloudFront + S3)
 
-- [ ] Create an S3 bucket with static website hosting enabled
-- [ ] Upload `frontend/dist/` (or `build/`)
-- [ ] (Optional) CloudFront distribution in front of the bucket
+- [ ] Get bucket name: `terraform output frontend_bucket_name`
+- [ ] Upload `frontend/dist/` (or `build/`) via `aws s3 sync`
+- [ ] Add CNAME `java-redis` → `terraform output cloudfront_domain` (proxied) in Cloudflare
 
 ## Phase 5 — Tracking Integration
 
 - [ ] Add the `sendBeacon` tracking snippet to target pages (see [deployment.md](docs/deployment.md))
 - [ ] Verify `POST /visit` returns `204`
 
-## Phase 6 — Verification & Free-Tier Check
+## Phase 6 — Verification
 
 - [ ] Dashboard renders all four widgets with live data
 - [ ] CloudWatch Logs show no errors across the three functions
 - [ ] Daily aggregation produces `stats:day:*` / `stats:week:*` keys
-- [ ] Upstash command usage stays under 500K/month (polling ≥ 60s)
-- [ ] Lambda stays within the free tier (requests + GB-seconds)
 
-## Cost Guardrails
 
-- Record writes: **4 Redis commands per visit** (maximum)
-- Dashboard polling: **≥ 60s**
-- Lambdas: **arm64 + SnapStart** enabled
-- Reminder: API Gateway and S3 free tiers expire after **12 months**
