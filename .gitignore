@@ -2,9 +2,16 @@
 .DS_Store
 .codegraph
 
+# Internal tooling
+.omo/
+
+# Backend build output
+backend/target/
+
 # Terraform
 .terraform/
 *.tfstate
 *.tfstate.*
 *.tfvars
 *.tfplan
+infra/tfplan*.bin

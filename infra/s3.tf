@@ -1,6 +1,9 @@
+data "aws_caller_identity" "current" {}
+
 # Frontend bucket — private, served through CloudFront
+# S3 bucket names are globally unique; append the account ID to avoid collisions
 resource "aws_s3_bucket" "frontend" {
-  bucket = "${var.project_name}-frontend"
+  bucket = "${var.project_name}-frontend-${data.aws_caller_identity.current.account_id}"
 }
 
 resource "aws_s3_bucket_public_access_block" "frontend" {
