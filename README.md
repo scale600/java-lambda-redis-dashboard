@@ -19,7 +19,7 @@ information on every API call and visualize real-time traffic.
 | Backend | Java + AWS Lambda |
 | API | Amazon API Gateway (REST) |
 | Data Store | Upstash Redis (serverless) |
-| Frontend | React or Vue.js |
+| Frontend | React |
 | Visualization | Chart.js |
 | Hosting | CloudFront + S3 (custom domain via Cloudflare) |
 | IaC | Terraform |
@@ -43,12 +43,11 @@ data flow.
 ```
 .
 ├── README.md
-├── CHECKLIST.md                   # Implementation progression checklist
-├── note.md                        # Project idea / plan
 ├── docs/
 │   ├── architecture.md            # System design & data flow
 │   ├── api.md                     # REST API specification
 │   ├── redis-data-model.md        # Redis keys & data structures
+│   ├── backend.md                 # Java Lambda backend implementation
 │   └── deployment.md              # Deployment guide (Terraform)
 ├── infra/                         # Terraform (IaC) — Lambda, API GW, S3, EventBridge
 │   ├── providers.tf
@@ -58,7 +57,7 @@ data flow.
 ├── backend/                       # Java Lambda (Maven)
 │   ├── pom.xml
 │   └── src/main/java/...
-├── frontend/                      # React / Vue dashboard
+├── frontend/                      # React dashboard
 │   ├── package.json
 │   └── src/...
 └── .env                           # Local environment variables (git-ignored)
@@ -66,8 +65,8 @@ data flow.
 
 ## Documentation
 
-- [Implementation Checklist](CHECKLIST.md)
 - [Architecture](docs/architecture.md)
+- [Backend](docs/backend.md)
 - [API Specification](docs/api.md)
 - [Redis Data Model](docs/redis-data-model.md)
 - [Deployment Guide](docs/deployment.md)
