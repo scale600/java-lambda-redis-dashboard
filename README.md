@@ -1,4 +1,4 @@
-# <img src="assets/java-logo.svg" alt="Java" width="40" height="40"> Real-Time Traffic Monitoring Dashboard
+# <img src="assets/java-logo.png" alt="Java" width="40" height="40"> Real-Time Traffic Monitoring Dashboard
 
 A **Java 17 + AWS Lambda** serverless dashboard that records visitor traffic into
 Upstash Redis and visualizes real-time analytics. The backend is written entirely
