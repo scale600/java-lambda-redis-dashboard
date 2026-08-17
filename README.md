@@ -136,10 +136,6 @@ data flow.
 3. Build and deploy the frontend to S3.
 4. Embed the tracking snippet on the pages you want to monitor.
 
-## Difficulty
-
-⭐⭐⭐ (Intermediate)
-
 ## Learning Points
 
 - **Java 17 + AWS Lambda** — `RequestHandler` interface, `APIGatewayProxyRequestEvent`
