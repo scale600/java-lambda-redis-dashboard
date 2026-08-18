@@ -29,9 +29,9 @@ class RecordVisitHandlerTest {
     }
 
     @Test
-    void recordsVisitWithFourCommandsAndReturns204() {
+    void recordsVisitWithFiveCommandsAndReturns204() {
         APIGatewayProxyRequestEvent input = new APIGatewayProxyRequestEvent();
-        input.setBody("{\"path\":\"/products/42\",\"userAgent\":\"Mozilla/5.0\"}");
+        input.setBody("{\"path\":\"/products/42\",\"site\":\"example.com\",\"userAgent\":\"Mozilla/5.0\"}");
         Map<String, String> headers = new HashMap<>();
         headers.put("x-forwarded-for", "203.0.113.7");
         input.setHeaders(headers);
@@ -41,8 +41,20 @@ class RecordVisitHandlerTest {
         assertEquals(204, response.getStatusCode());
         verify(redis).hincrby(startsWith("counter:hour:"), anyString(), eq(1L));
         verify(redis).hincrby(startsWith("paths:day:"), eq("/products/42"), eq(1L));
+        verify(redis).hincrby(startsWith("sites:day:"), eq("example.com"), eq(1L));
         verify(redis).lpush(eq("visits:recent"), contains("203.0.113.7"));
         verify(redis).pfadd(startsWith("visitors:unique:day:"), contains("203.0.113.7"));
+    }
+
+    @Test
+    void defaultsMissingSiteToUnknown() {
+        APIGatewayProxyRequestEvent input = new APIGatewayProxyRequestEvent();
+        input.setBody("{\"path\":\"/products/42\"}");
+
+        APIGatewayProxyResponseEvent response = handler.handleRequest(input, context);
+
+        assertEquals(204, response.getStatusCode());
+        verify(redis).hincrby(startsWith("sites:day:"), eq("unknown"), eq(1L));
     }
 
     @Test

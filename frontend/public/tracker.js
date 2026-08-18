@@ -8,6 +8,7 @@
     endpoint,
     JSON.stringify({
       path: location.pathname,
+      site: location.hostname,
       referer: document.referrer || null,
       userAgent: navigator.userAgent
     })

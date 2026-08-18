@@ -3,10 +3,12 @@ import {
   fetchOverview,
   fetchPaths,
   fetchRecent,
+  fetchSites,
   fetchTimeseries,
   type Overview,
   type Paths,
   type RecentVisits,
+  type Sites,
   type Timeseries,
 } from '../api';
 
@@ -16,6 +18,7 @@ export interface DashboardState {
   overview: Overview | null;
   timeseries: Timeseries | null;
   paths: Paths | null;
+  sites: Sites | null;
   recent: RecentVisits | null;
   loading: boolean;
   error: string | null;
@@ -26,6 +29,7 @@ const initialState: DashboardState = {
   overview: null,
   timeseries: null,
   paths: null,
+  sites: null,
   recent: null,
   loading: true,
   error: null,
@@ -37,10 +41,11 @@ export function useDashboardData(): DashboardState {
 
   const load = useCallback(async () => {
     try {
-      const [overview, timeseries, paths, recent] = await Promise.all([
+      const [overview, timeseries, paths, sites, recent] = await Promise.all([
         fetchOverview(),
         fetchTimeseries('hour', 24),
         fetchPaths(20),
+        fetchSites(20),
         fetchRecent(20),
       ]);
       setState((prev) => ({
@@ -48,6 +53,7 @@ export function useDashboardData(): DashboardState {
         overview,
         timeseries,
         paths,
+        sites,
         recent,
         loading: false,
         error: null,

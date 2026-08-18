@@ -16,14 +16,15 @@ stored in a single logical database.
 | `granularity` | `day`, `hour`, `week` | Time bucket granularity (if any) |
 | `bucket` | `20260816`, `2026081614`, `2026W33` | Time bucket identifier |
 
-## Write Path (4 commands per visit)
+## Write Path (5 commands per visit)
 
-A visit performs exactly 4 commands:
+A visit performs exactly 5 commands:
 
 ```redis
 HINCRBY counter:hour:20260816 14 1
 HINCRBY paths:day:20260816 "/products/42" 1
-LPUSH visits:recent '{"time":"...","path":"/products/42","ip":"...","ua":"..."}'
+HINCRBY sites:day:20260816 "example.com" 1
+LPUSH visits:recent '{"time":"...","path":"/products/42","site":"example.com","ip":"...","ua":"..."}'
 PFADD visitors:unique:day:20260816 "203.0.113.7|Mozilla/5.0"
 ```
 
@@ -37,6 +38,7 @@ PFADD visitors:unique:day:20260816 "203.0.113.7|Mozilla/5.0"
 | --- | --- | --- | --- | --- |
 | `counter:hour:{yyyyMMdd}` | hash | Hourly buckets (field = `HH`); daily = sum | per visit | 7 days |
 | `paths:day:{yyyyMMdd}` | hash | Views per path (field = path) | per visit | 7 days |
+| `sites:day:{yyyyMMdd}` | hash | Views per site (field = hostname) | per visit | 7 days |
 | `visits:recent` | list | Recent visits (JSON payloads) | per visit | — (capped 100) |
 | `visitors:unique:day:{yyyyMMdd}` | HyperLogLog | Unique visitors (`ip\|ua`) | per visit | 7 days |
 | `stats:total` | string | Lifetime total visits | daily (aggregation) | — |
@@ -46,15 +48,17 @@ PFADD visitors:unique:day:20260816 "203.0.113.7|Mozilla/5.0"
 ## Example Commands
 
 ```redis
-# Per visit (4 commands)
+# Per visit (5 commands)
 HINCRBY counter:hour:20260816 14 1
 HINCRBY paths:day:20260816 "/products/42" 1
-LPUSH visits:recent '{"time":"...","path":"/products/42","ip":"...","ua":"..."}'
+HINCRBY sites:day:20260816 "example.com" 1
+LPUSH visits:recent '{"time":"...","path":"/products/42","site":"example.com","ip":"...","ua":"..."}'
 PFADD visitors:unique:day:20260816 "203.0.113.7|Mozilla/5.0"
 
 # Read
 HGETALL counter:hour:20260816          # hourly series / daily total (sum fields)
 HGETALL paths:day:20260816             # views per path
+HGETALL sites:day:20260816             # views per site
 LRANGE visits:recent 0 19              # recent visits
 PFCOUNT visitors:unique:day:20260816   # unique visitors
 GET stats:total                        # lifetime total

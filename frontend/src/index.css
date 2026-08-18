@@ -162,7 +162,7 @@ body {
 
 .dashboard-grid {
   display: grid;
-  grid-template-columns: 2fr 1fr;
+  grid-template-columns: 2fr 1fr 1fr;
   gap: 16px;
 }
 
@@ -241,6 +241,12 @@ body {
 
 .path-cell {
   color: var(--accent-2);
+  font-family: var(--mono);
+  font-size: 13px;
+}
+
+.site-cell {
+  color: var(--accent);
   font-family: var(--mono);
   font-size: 13px;
 }

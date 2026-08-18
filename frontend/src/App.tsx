@@ -1,12 +1,13 @@
 import { StatCard } from './components/StatCard';
 import { TimeseriesChart } from './components/TimeseriesChart';
 import { PathsChart } from './components/PathsChart';
+import { SitesChart } from './components/SitesChart';
 import { RecentVisits } from './components/RecentVisits';
 import { formatRelative } from './format';
 import { useDashboardData } from './hooks/useDashboardData';
 
 export default function App() {
-  const { overview, timeseries, paths, recent, loading, error, lastFetched } =
+  const { overview, timeseries, paths, sites, recent, loading, error, lastFetched } =
     useDashboardData();
 
   return (
@@ -57,6 +58,14 @@ export default function App() {
             <span className="panel-meta">today</span>
           </div>
           <PathsChart data={paths} />
+        </div>
+
+        <div className="card panel">
+          <div className="panel-header">
+            <h2>Sites</h2>
+            <span className="panel-meta">today</span>
+          </div>
+          <SitesChart data={sites} />
         </div>
       </section>
 

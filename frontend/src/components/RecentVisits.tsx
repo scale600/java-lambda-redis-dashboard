@@ -15,6 +15,7 @@ export function RecentVisits({ data }: RecentVisitsProps) {
           <tr>
             <th>Time</th>
             <th>Path</th>
+            <th>Site</th>
             <th>IP</th>
             <th>User-Agent</th>
           </tr>
@@ -22,7 +23,7 @@ export function RecentVisits({ data }: RecentVisitsProps) {
         <tbody>
           {visits.length === 0 ? (
             <tr>
-              <td colSpan={4} className="empty-cell">
+              <td colSpan={5} className="empty-cell">
                 No visits recorded yet
               </td>
             </tr>
@@ -31,6 +32,7 @@ export function RecentVisits({ data }: RecentVisitsProps) {
               <tr key={`${v.time}-${i}`}>
                 <td className="mono">{formatDateTime(v.time)}</td>
                 <td className="path-cell">{v.path}</td>
+                <td className="site-cell">{v.site || '—'}</td>
                 <td className="mono">{v.ip}</td>
                 <td className="ua-cell" title={v.ua}>
                   {v.ua || '—'}

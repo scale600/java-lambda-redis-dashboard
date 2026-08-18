@@ -20,7 +20,7 @@ import java.util.Map;
 /**
  * Handles {@code GET /health} and {@code GET /stats/{proxy+}} where
  * {@code proxy} is one of {@code overview}, {@code timeseries}, {@code paths},
- * or {@code recent}.
+ * {@code sites}, or {@code recent}.
  */
 public class GetStatsHandler implements RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent> {
 
@@ -58,6 +58,8 @@ public class GetStatsHandler implements RequestHandler<APIGatewayProxyRequestEve
                     return timeseries(input.getQueryStringParameters());
                 case "paths":
                     return paths(input.getQueryStringParameters());
+                case "sites":
+                    return sites(input.getQueryStringParameters());
                 case "recent":
                     return recent(input.getQueryStringParameters());
                 default:
@@ -137,6 +139,30 @@ public class GetStatsHandler implements RequestHandler<APIGatewayProxyRequestEve
             }
             ObjectNode item = arr.addObject();
             item.put("path", e.getKey());
+            item.put("count", e.getValue());
+        }
+        return Api.ok(root.toString());
+    }
+
+    private APIGatewayProxyResponseEvent sites(Map<String, String> query) {
+        int limit = query != null ? parseInt(query.get("limit"), 20) : 20;
+        Map<String, String> raw = redis.hgetall("sites:day:" + today());
+
+        List<Map.Entry<String, Long>> entries = new ArrayList<>();
+        for (Map.Entry<String, String> e : raw.entrySet()) {
+            entries.add(new AbstractMap.SimpleEntry<>(e.getKey(), longOrZero(e.getValue())));
+        }
+        entries.sort((a, b) -> Long.compare(b.getValue(), a.getValue()));
+
+        ObjectNode root = MAPPER.createObjectNode();
+        ArrayNode arr = root.putArray("sites");
+        int n = 0;
+        for (Map.Entry<String, Long> e : entries) {
+            if (n++ >= limit) {
+                break;
+            }
+            ObjectNode item = arr.addObject();
+            item.put("site", e.getKey());
             item.put("count", e.getValue());
         }
         return Api.ok(root.toString());

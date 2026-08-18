@@ -47,12 +47,15 @@ Records a single visit.
 ```json
 {
   "path": "/products/42",
+  "site": "example.com",
   "referer": "https://example.com/home",
   "userAgent": "Mozilla/5.0 ..."
 }
 ```
 
 - `path` (string, required) — visited path/URL.
+- `site` (string, optional) — hostname of the site the snippet is embedded on
+  (e.g. `example.com`). Defaults to `unknown`.
 - `referer` (string, optional) — referring page.
 - `userAgent` (string, optional) — client User-Agent. The server derives IP.
 
@@ -129,6 +132,27 @@ Views by access path for the bar chart or table.
 }
 ```
 
+### `GET /stats/sites`
+
+Visits by originating site (hostname) for the bar chart or table.
+
+**Query parameters**
+
+| Param | Type | Default | Description |
+| --- | --- | --- | --- |
+| `limit` | integer | `20` | Number of top sites to return |
+
+**Response** — `200`
+
+```json
+{
+  "sites": [
+    { "site": "example.com", "count": 812 },
+    { "site": "blog.example.com", "count": 194 }
+  ]
+}
+```
+
 ### `GET /stats/recent`
 
 Most recent visits.
@@ -147,6 +171,7 @@ Most recent visits.
     {
       "time": "2026-08-16T14:04:12Z",
       "path": "/products/42",
+      "site": "example.com",
       "ip": "203.0.113.7",
       "userAgent": "Mozilla/5.0 ..."
     }
