@@ -2,6 +2,23 @@ import type { ChartData, ChartOptions } from 'chart.js';
 import { Bar } from 'react-chartjs-2';
 import type { Paths } from '../api';
 
+const MAX_TITLE_LENGTH = 42;
+
+function wrapLabel(text: string): string[] {
+  const lines: string[] = [];
+  let rest = text;
+  while (rest.length > MAX_TITLE_LENGTH) {
+    const slash = rest.lastIndexOf('/', MAX_TITLE_LENGTH);
+    const cut = slash > 0 ? slash + 1 : MAX_TITLE_LENGTH;
+    lines.push(rest.slice(0, cut));
+    rest = rest.slice(cut);
+  }
+  if (rest.length > 0) {
+    lines.push(rest);
+  }
+  return lines;
+}
+
 interface PathsChartProps {
   data: Paths | null;
   loading?: boolean;
@@ -49,6 +66,13 @@ export function PathsChart({ data, loading = false }: PathsChartProps) {
         bodyColor: '#c9d1d9',
         padding: 12,
         displayColors: false,
+        callbacks: {
+          title: (items) => {
+            const label = items[0]?.label;
+            return label ? wrapLabel(label) : '';
+          },
+          label: (item) => `Views: ${item.parsed.x}`,
+        },
       },
     },
     scales: {
