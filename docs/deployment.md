@@ -126,6 +126,7 @@ Add a small script to each page to monitor:
     if (!navigator.sendBeacon) return;
     var payload = {
       path: location.pathname,
+      site: location.hostname,
       referer: document.referrer || null,
       userAgent: navigator.userAgent
     };

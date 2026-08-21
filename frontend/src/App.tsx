@@ -2,6 +2,7 @@ import { StatCard } from './components/StatCard';
 import { TimeseriesChart } from './components/TimeseriesChart';
 import { PathsChart } from './components/PathsChart';
 import { RecentVisits } from './components/RecentVisits';
+import { SitesChart } from './components/SitesChart';
 import { formatRelative } from './format';
 import { RANGE_OPTIONS, useDashboardData } from './hooks/useDashboardData';
 
@@ -10,6 +11,7 @@ export default function App() {
     overview,
     timeseries,
     paths,
+    sites,
     recent,
     loading,
     rangeLoading,
@@ -92,6 +94,14 @@ export default function App() {
             <span className="panel-meta">today</span>
           </div>
           <PathsChart data={paths} loading={loading} />
+        </div>
+
+        <div className="card panel">
+          <div className="panel-header">
+            <h2>Sites</h2>
+            <span className="panel-meta">today</span>
+          </div>
+          <SitesChart data={sites} loading={loading} />
         </div>
       </section>
 

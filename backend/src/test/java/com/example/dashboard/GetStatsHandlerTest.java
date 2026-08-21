@@ -73,4 +73,27 @@ class GetStatsHandlerTest {
 
         assertEquals(404, response.getStatusCode());
     }
+
+    @Test
+    void sitesReturnsTopSites() throws Exception {
+        APIGatewayProxyRequestEvent input = new APIGatewayProxyRequestEvent();
+        input.setPath("/stats/sites");
+        Map<String, String> pathParams = new HashMap<>();
+        pathParams.put("proxy", "sites");
+        input.setPathParameters(pathParams);
+
+        Map<String, String> raw = new HashMap<>();
+        raw.put("example.com", "812");
+        raw.put("blog.example.com", "194");
+        when(redis.hgetall(startsWith("sites:day:"))).thenReturn(raw);
+
+        APIGatewayProxyResponseEvent response = handler.handleRequest(input, context);
+
+        assertEquals(200, response.getStatusCode());
+        JsonNode json = MAPPER.readTree(response.getBody());
+        JsonNode sites = json.get("sites");
+        assertEquals(2, sites.size());
+        assertEquals("example.com", sites.get(0).get("site").asText());
+        assertEquals(812, sites.get(0).get("count").asLong());
+    }
 }
