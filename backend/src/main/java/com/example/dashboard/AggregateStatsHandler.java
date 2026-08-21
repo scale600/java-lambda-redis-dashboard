@@ -60,7 +60,6 @@ public class AggregateStatsHandler implements RequestHandler<Map<String, Object>
             // Expire raw daily keys (7-day retention)
             redis.expire("counter:hour:" + day, 7 * DAY_SECONDS);
             redis.expire("paths:day:" + day, 7 * DAY_SECONDS);
-            redis.expire("sites:day:" + day, 7 * DAY_SECONDS);
             redis.expire("visitors:unique:day:" + day, 7 * DAY_SECONDS);
 
             context.getLogger().log("Aggregated " + day + ": " + total + " visits");

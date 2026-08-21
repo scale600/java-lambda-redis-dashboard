@@ -55,7 +55,8 @@ Records a single visit.
 
 - `path` (string, required) — visited path/URL.
 - `site` (string, optional) — hostname of the site the snippet is embedded on
-  (e.g. `example.com`). Defaults to `unknown`.
+  (e.g. `example.com`). When present, it is prepended to `path` (e.g.
+  `example.com/products/42`) for per-path aggregation.
 - `referer` (string, optional) — referring page.
 - `userAgent` (string, optional) — client User-Agent. The server derives IP.
 
@@ -113,7 +114,7 @@ Visitor trend for the line chart.
 
 ### `GET /stats/paths`
 
-Views by access path for the bar chart or table.
+Views by access path (site hostname + path) for the bar chart or table.
 
 **Query parameters**
 
@@ -126,29 +127,8 @@ Views by access path for the bar chart or table.
 ```json
 {
   "paths": [
-    { "path": "/", "count": 812 },
-    { "path": "/products/42", "count": 194 }
-  ]
-}
-```
-
-### `GET /stats/sites`
-
-Visits by originating site (hostname) for the bar chart or table.
-
-**Query parameters**
-
-| Param | Type | Default | Description |
-| --- | --- | --- | --- |
-| `limit` | integer | `20` | Number of top sites to return |
-
-**Response** — `200`
-
-```json
-{
-  "sites": [
-    { "site": "example.com", "count": 812 },
-    { "site": "blog.example.com", "count": 194 }
+    { "path": "example.com/", "count": 812 },
+    { "path": "example.com/products/42", "count": 194 }
   ]
 }
 ```
@@ -170,8 +150,7 @@ Most recent visits.
   "visits": [
     {
       "time": "2026-08-16T14:04:12Z",
-      "path": "/products/42",
-      "site": "example.com",
+      "path": "example.com/products/42",
       "ip": "203.0.113.7",
       "userAgent": "Mozilla/5.0 ..."
     }

@@ -14,12 +14,13 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * Handles {@code POST /visit}. Writes a 5-command visit record to Upstash Redis:
+ * Handles {@code POST /visit}. Writes a 4-command visit record to Upstash Redis.
+ * The tracked path is prefixed with the originating site's hostname so the
+ * dashboard can show the full site + path in "Top paths".
  *
  * <pre>
  *   HINCRBY counter:hour:{yyyyMMdd} {HH} 1
- *   HINCRBY paths:day:{yyyyMMdd} {path} 1
- *   HINCRBY sites:day:{yyyyMMdd} {site} 1
+ *   HINCRBY paths:day:{yyyyMMdd} {site}{path} 1
  *   LPUSH  visits:recent {json}
  *   PFADD  visitors:unique:day:{yyyyMMdd} {ip|ua}
  * </pre>
@@ -45,7 +46,7 @@ public class RecordVisitHandler implements RequestHandler<APIGatewayProxyRequest
             JsonNode json = parseBody(input.getBody());
 
             String path = json.hasNonNull("path") ? json.get("path").asText() : "/";
-            String site = json.hasNonNull("site") ? json.get("site").asText() : "unknown";
+            String site = json.hasNonNull("site") ? json.get("site").asText() : "";
             String userAgent = json.hasNonNull("userAgent") ? json.get("userAgent").asText() : "";
             String ip = resolveIp(input);
 
@@ -53,14 +54,14 @@ public class RecordVisitHandler implements RequestHandler<APIGatewayProxyRequest
             String day = now.format(DAY);
             String hour = String.valueOf(now.getHour());
 
+            String fullPath = site.isBlank() ? path : site + path;
+
             redis.hincrby("counter:hour:" + day, hour, 1);
-            redis.hincrby("paths:day:" + day, path, 1);
-            redis.hincrby("sites:day:" + day, site, 1);
+            redis.hincrby("paths:day:" + day, fullPath, 1);
 
             Map<String, Object> visit = new LinkedHashMap<>();
             visit.put("time", now.toInstant().toString());
-            visit.put("path", path);
-            visit.put("site", site);
+            visit.put("path", fullPath);
             visit.put("ip", ip);
             visit.put("ua", userAgent);
             redis.lpush("visits:recent", MAPPER.writeValueAsString(visit));

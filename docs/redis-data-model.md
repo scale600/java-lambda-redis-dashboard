@@ -16,15 +16,16 @@ stored in a single logical database.
 | `granularity` | `day`, `hour`, `week` | Time bucket granularity (if any) |
 | `bucket` | `20260816`, `2026081614`, `2026W33` | Time bucket identifier |
 
-## Write Path (5 commands per visit)
+## Write Path (4 commands per visit)
 
-A visit performs exactly 5 commands:
+A visit performs exactly 4 commands. The tracked path is the originating site
+hostname prefixed to the request path (`{site}{path}`), so `paths:day` keys
+aggregate full site + path (e.g. `example.com/products/42`).
 
 ```redis
 HINCRBY counter:hour:20260816 14 1
-HINCRBY paths:day:20260816 "/products/42" 1
-HINCRBY sites:day:20260816 "example.com" 1
-LPUSH visits:recent '{"time":"...","path":"/products/42","site":"example.com","ip":"...","ua":"..."}'
+HINCRBY paths:day:20260816 "example.com/products/42" 1
+LPUSH visits:recent '{"time":"...","path":"example.com/products/42","ip":"...","ua":"..."}'
 PFADD visitors:unique:day:20260816 "203.0.113.7|Mozilla/5.0"
 ```
 
@@ -37,8 +38,7 @@ PFADD visitors:unique:day:20260816 "203.0.113.7|Mozilla/5.0"
 | Key | Type | Purpose | Written | TTL |
 | --- | --- | --- | --- | --- |
 | `counter:hour:{yyyyMMdd}` | hash | Hourly buckets (field = `HH`); daily = sum | per visit | 7 days |
-| `paths:day:{yyyyMMdd}` | hash | Views per path (field = path) | per visit | 7 days |
-| `sites:day:{yyyyMMdd}` | hash | Views per site (field = hostname) | per visit | 7 days |
+| `paths:day:{yyyyMMdd}` | hash | Views per path — field = `{site}{path}` | per visit | 7 days |
 | `visits:recent` | list | Recent visits (JSON payloads) | per visit | — (capped 100) |
 | `visitors:unique:day:{yyyyMMdd}` | HyperLogLog | Unique visitors (`ip\|ua`) | per visit | 7 days |
 | `stats:total` | string | Lifetime total visits | daily (aggregation) | — |
@@ -48,17 +48,15 @@ PFADD visitors:unique:day:20260816 "203.0.113.7|Mozilla/5.0"
 ## Example Commands
 
 ```redis
-# Per visit (5 commands)
+# Per visit (4 commands)
 HINCRBY counter:hour:20260816 14 1
-HINCRBY paths:day:20260816 "/products/42" 1
-HINCRBY sites:day:20260816 "example.com" 1
-LPUSH visits:recent '{"time":"...","path":"/products/42","site":"example.com","ip":"...","ua":"..."}'
+HINCRBY paths:day:20260816 "example.com/products/42" 1
+LPUSH visits:recent '{"time":"...","path":"example.com/products/42","ip":"...","ua":"..."}'
 PFADD visitors:unique:day:20260816 "203.0.113.7|Mozilla/5.0"
 
 # Read
 HGETALL counter:hour:20260816          # hourly series / daily total (sum fields)
-HGETALL paths:day:20260816             # views per path
-HGETALL sites:day:20260816             # views per site
+HGETALL paths:day:20260816             # views per path (site + path)
 LRANGE visits:recent 0 19              # recent visits
 PFCOUNT visitors:unique:day:20260816   # unique visitors
 GET stats:total                        # lifetime total
