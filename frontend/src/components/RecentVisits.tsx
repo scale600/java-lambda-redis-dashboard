@@ -24,6 +24,12 @@ export function RecentVisits({ data, loading = false }: RecentVisitsProps) {
   return (
     <div className="table-wrap">
       <table className="visits-table">
+        <colgroup>
+          <col className="col-time" />
+          <col className="col-path" />
+          <col className="col-ip" />
+          <col className="col-ua" />
+        </colgroup>
         <thead>
           <tr>
             <th>Time (UTC)</th>
@@ -43,7 +49,7 @@ export function RecentVisits({ data, loading = false }: RecentVisitsProps) {
             visits.map((v, i) => (
               <tr key={`${v.time}-${i}`}>
                 <td className="mono">{formatDateTime(v.time)}</td>
-                <td className="path-cell">{v.path}</td>
+                <td className="path-cell" title={v.path}>{v.path}</td>
                 <td className="mono">{v.ip}</td>
                 <td className="ua-cell" title={v.ua}>
                   {v.ua || '—'}

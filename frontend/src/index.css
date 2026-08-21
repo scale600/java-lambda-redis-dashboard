@@ -202,8 +202,21 @@ body {
 
 .visits-table {
   width: 100%;
+  table-layout: fixed;
   border-collapse: collapse;
   font-size: 14px;
+}
+
+.col-time {
+  width: 132px;
+}
+
+.col-path {
+  width: 34%;
+}
+
+.col-ip {
+  width: 116px;
 }
 
 .visits-table th {
@@ -243,6 +256,9 @@ body {
   color: var(--accent-2);
   font-family: var(--mono);
   font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .ua-cell {
