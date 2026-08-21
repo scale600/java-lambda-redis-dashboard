@@ -162,7 +162,7 @@ body {
 
 .dashboard-grid {
   display: grid;
-  grid-template-columns: 2fr 1fr 1fr;
+  grid-template-columns: 2fr 1fr;
   gap: 16px;
 }
 
@@ -245,12 +245,6 @@ body {
   font-size: 13px;
 }
 
-.site-cell {
-  color: var(--accent);
-  font-family: var(--mono);
-  font-size: 13px;
-}
-
 .ua-cell {
   max-width: 360px;
   overflow: hidden;
@@ -269,4 +263,112 @@ body {
   .dashboard-grid {
     grid-template-columns: 1fr;
   }
+}
+
+/* Skeleton loading placeholders */
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: var(--surface-2);
+  border-radius: 6px;
+}
+
+.skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.05),
+    transparent
+  );
+  animation: shimmer 1.4s infinite;
+}
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.skeleton-value {
+  height: 40px;
+  width: 70%;
+}
+
+.skeleton-label {
+  height: 13px;
+  width: 40%;
+}
+
+.skeleton-hint {
+  height: 13px;
+  width: 30%;
+}
+
+.skeleton-chart {
+  height: 300px;
+}
+
+.skeleton-rows {
+  padding: 4px 0;
+}
+
+.skeleton-row {
+  height: 16px;
+  margin: 14px 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton::after {
+    animation: none;
+  }
+}
+
+/* Time range toggle */
+.range-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.range-tz {
+  font-size: 12px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.range-toggle {
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.range-option {
+  appearance: none;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 500;
+  padding: 4px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  letter-spacing: 0.02em;
+  transition: color 0.15s ease, background-color 0.15s ease;
+}
+
+.range-option:hover {
+  color: var(--text);
+}
+
+.range-option.is-active {
+  background: var(--accent);
+  color: #0b0f19;
 }

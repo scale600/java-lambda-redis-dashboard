@@ -4,9 +4,18 @@ import type { Paths } from '../api';
 
 interface PathsChartProps {
   data: Paths | null;
+  loading?: boolean;
 }
 
-export function PathsChart({ data }: PathsChartProps) {
+export function PathsChart({ data, loading = false }: PathsChartProps) {
+  if (loading) {
+    return (
+      <div className="chart-container">
+        <div className="skeleton skeleton-chart" />
+      </div>
+    );
+  }
+
   const entries = data?.paths ?? [];
   const labels = entries.map((p) => p.path);
   const counts = entries.map((p) => p.count);

@@ -1,14 +1,27 @@
 import type { ChartData, ChartOptions } from 'chart.js';
 import { Line } from 'react-chartjs-2';
 import type { Timeseries } from '../api';
-import { formatHour } from '../format';
+import { formatDay, formatHour } from '../format';
 
 interface TimeseriesChartProps {
   data: Timeseries | null;
+  loading?: boolean;
 }
 
-export function TimeseriesChart({ data }: TimeseriesChartProps) {
-  const labels = data?.series.map((p) => formatHour(p.timestamp)) ?? [];
+export function TimeseriesChart({ data, loading = false }: TimeseriesChartProps) {
+  if (loading) {
+    return (
+      <div className="chart-container">
+        <div className="skeleton skeleton-chart" />
+      </div>
+    );
+  }
+
+  const isDaily = data?.granularity === 'day';
+  const labels =
+    data?.series.map((p) =>
+      isDaily ? formatDay(p.timestamp) : formatHour(p.timestamp),
+    ) ?? [];
   const counts = data?.series.map((p) => p.count) ?? [];
 
   const chartData: ChartData<'line'> = {

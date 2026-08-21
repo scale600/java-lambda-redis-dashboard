@@ -5,7 +5,10 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Traffic Dashboard</title>
-    <script src="/tracker.js" defer></script>
+    <!--
+      The dashboard must not track its own visitors.
+      tracker.js is meant for monitored sites only (see docs/deployment.md).
+    -->
   </head>
   <body>
     <div id="root"></div>

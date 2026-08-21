@@ -1,9 +1,22 @@
 export function formatHour(iso: string): string {
-  return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  return new Date(iso).toLocaleTimeString([], {
+    timeZone: 'UTC',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
+export function formatDay(iso: string): string {
+  return new Date(iso).toLocaleDateString([], {
+    timeZone: 'UTC',
+    month: 'short',
+    day: 'numeric',
+  });
 }
 
 export function formatDateTime(iso: string): string {
   return new Date(iso).toLocaleString([], {
+    timeZone: 'UTC',
     month: 'short',
     day: 'numeric',
     hour: '2-digit',

@@ -28,19 +28,9 @@ export interface Paths {
   paths: PathCount[];
 }
 
-export interface SiteCount {
-  site: string;
-  count: number;
-}
-
-export interface Sites {
-  sites: SiteCount[];
-}
-
 export interface Visit {
   time: string;
   path: string;
-  site?: string;
   ip: string;
   ua: string;
 }
@@ -67,10 +57,6 @@ export function fetchTimeseries(granularity: 'hour' | 'day' = 'hour', limit = 24
 
 export function fetchPaths(limit = 20): Promise<Paths> {
   return get<Paths>(`/stats/paths?limit=${limit}`);
-}
-
-export function fetchSites(limit = 20): Promise<Sites> {
-  return get<Sites>(`/stats/sites?limit=${limit}`);
 }
 
 export function fetchRecent(limit = 20): Promise<RecentVisits> {

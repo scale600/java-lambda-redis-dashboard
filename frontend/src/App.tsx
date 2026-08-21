@@ -1,14 +1,23 @@
 import { StatCard } from './components/StatCard';
 import { TimeseriesChart } from './components/TimeseriesChart';
 import { PathsChart } from './components/PathsChart';
-import { SitesChart } from './components/SitesChart';
 import { RecentVisits } from './components/RecentVisits';
 import { formatRelative } from './format';
-import { useDashboardData } from './hooks/useDashboardData';
+import { RANGE_OPTIONS, useDashboardData } from './hooks/useDashboardData';
 
 export default function App() {
-  const { overview, timeseries, paths, sites, recent, loading, error, lastFetched } =
-    useDashboardData();
+  const {
+    overview,
+    timeseries,
+    paths,
+    recent,
+    loading,
+    rangeLoading,
+    error,
+    lastFetched,
+    range,
+    setRange,
+  } = useDashboardData();
 
   return (
     <div className="app">
@@ -38,18 +47,43 @@ export default function App() {
       ) : null}
 
       <section className="stat-grid">
-        <StatCard label="Total visits" value={overview?.total ?? 0} />
-        <StatCard label="Today" value={overview?.today ?? 0} />
-        <StatCard label="Unique today" value={overview?.uniqueToday ?? 0} />
+        <StatCard label="Total visits" value={overview?.total ?? 0} loading={loading} />
+        <StatCard
+          label="Today"
+          value={overview?.today ?? 0}
+          hint="UTC"
+          loading={loading}
+        />
+        <StatCard
+          label="Unique today"
+          value={overview?.uniqueToday ?? 0}
+          hint="UTC"
+          loading={loading}
+        />
       </section>
 
       <section className="dashboard-grid">
         <div className="card panel">
           <div className="panel-header">
             <h2>Visitors over time</h2>
-            <span className="panel-meta">hourly</span>
+            <div className="range-controls">
+              <span className="range-tz">UTC</span>
+              <div className="range-toggle" role="group" aria-label="Time range">
+                {RANGE_OPTIONS.map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    className={`range-option${range === option.value ? ' is-active' : ''}`}
+                    aria-pressed={range === option.value}
+                    onClick={() => setRange(option.value)}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
-          <TimeseriesChart data={timeseries} />
+          <TimeseriesChart data={timeseries} loading={loading || rangeLoading} />
         </div>
 
         <div className="card panel">
@@ -57,15 +91,7 @@ export default function App() {
             <h2>Top paths</h2>
             <span className="panel-meta">today</span>
           </div>
-          <PathsChart data={paths} />
-        </div>
-
-        <div className="card panel">
-          <div className="panel-header">
-            <h2>Sites</h2>
-            <span className="panel-meta">today</span>
-          </div>
-          <SitesChart data={sites} />
+          <PathsChart data={paths} loading={loading} />
         </div>
       </section>
 
@@ -74,7 +100,7 @@ export default function App() {
           <h2>Recent visits</h2>
           <span className="panel-meta">latest 20</span>
         </div>
-        <RecentVisits data={recent} />
+        <RecentVisits data={recent} loading={loading} />
       </section>
     </div>
   );
